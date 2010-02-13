@@ -2,7 +2,8 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe "ActsAsRestfulList" do
   after(:each) do
-    Mixin.destroy_all
+    ActiveRecord::Base.connection.execute("DELETE FROM mixins")
+    ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence where name='mixins'")
   end
   
   describe 'standard declaration with no options' do
@@ -32,15 +33,15 @@ describe "ActsAsRestfulList" do
       end
     end
     
-    it 'should reset order after updating a record' do
-      mixin = Mixin.create
-      mixin.should_receive(:reset_order).and_return(true)
-      mixin.save!
-    end
-    
-    describe 'reordering' do
+    describe 'reordering on update' do
       before(:each) do
         (1..4).each{ Mixin.create! }
+      end
+      
+      it 'should reset order after updating a record' do
+        mixin = Mixin.create
+        mixin.should_receive(:reset_order_after_update).and_return(true)
+        mixin.save!
       end
       
       it 'should automatically reorder the list if a record is updated with a lower position' do
@@ -57,6 +58,21 @@ describe "ActsAsRestfulList" do
         second_mixin.save!
         second_mixin.reload.position.should == 4
         Mixin.all(:order => 'position ASC').collect(&:position).should == [1,2,3,4]
+      end
+    end
+      
+    describe 'reordering on deletion' do
+      it 'should reset the order after deleting a record' do
+        mixin = Mixin.create
+        mixin.should_receive(:reset_order_after_destroy).and_return(true)
+        mixin.destroy
+      end
+      
+      it 'should automatically reorder the list if the record id deleted' do
+        (1..4).each{ Mixin.create! }
+        second_mixin = Mixin.first( :conditions => { :position => 2 } )
+        second_mixin.destroy
+        Mixin.all(:order => 'position ASC').collect(&:position).should == [1,2,3]
       end
     end
   end

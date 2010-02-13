@@ -10,7 +10,8 @@ module ActsAsRestfulList
       include InstanceMethods
       
       before_create :set_position
-      after_update :reset_order
+      after_update :reset_order_after_update
+      after_destroy :reset_order_after_destroy
     end
   end
   
@@ -20,7 +21,7 @@ module ActsAsRestfulList
       self.position = last_record.nil? ? 1 : last_record.position + 1
     end
     
-    def reset_order
+    def reset_order_after_update
       if position_changed?
         if position_was > position
           self.class.update_all("position = (position + 1)", "position >= #{position} AND id != #{id}")
@@ -28,6 +29,10 @@ module ActsAsRestfulList
           self.class.update_all("position = (position - 1)", "position <= #{position} AND position >= #{position_was} AND id != #{id}")
         end
       end
+    end
+    
+    def reset_order_after_destroy
+      self.class.update_all("position = (position - 1)", "position > #{position}")
     end
   end
 end
