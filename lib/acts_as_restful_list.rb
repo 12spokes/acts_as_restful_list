@@ -10,7 +10,7 @@ module ActsAsRestfulList
       include InstanceMethods
       
       before_create :set_position
-      before_update :reset_order
+      after_update :reset_order
     end
   end
   
