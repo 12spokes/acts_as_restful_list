@@ -5,8 +5,8 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "acts_as_restful_list"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = %Q{Restful acts_as_list}
+    gem.description = %Q{Just like acts_as_list, but allows updating through standard restful methods.}
     gem.email = "trey@12spokes.com"
     gem.homepage = "http://github.com/treybean/acts_as_restful_list"
     gem.authors = ["'Trey Bean'"]
