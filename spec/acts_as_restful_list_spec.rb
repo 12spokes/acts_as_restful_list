@@ -92,6 +92,10 @@ describe "ActsAsRestfulList" do
         Mixin.all(:order => 'position ASC').collect(&:position).should == [1,2,3]
       end
     end
+    
+    it 'should return nil for scope_condition since it was not set' do
+      Mixin.new.scope_condition.should be_nil
+    end
   end
   
   
@@ -180,6 +184,117 @@ describe "ActsAsRestfulList" do
         second_mixin.destroy
         Mixin.all(:order => 'pos ASC').collect(&:pos).should == [1,2,3]
       end
+    end
+  end
+  
+  describe 'declaring acts_as_restful_list and setting the scope' do
+    before(:all) do
+      ActiveRecord::Schema.define(:version => 1) do
+        create_table :mixins do |t|
+          t.column :position, :integer
+          t.column :parent_id, :integer
+          t.column :created_at, :datetime      
+          t.column :updated_at, :datetime
+        end
+      end
+      
+      class Mixin < ActiveRecord::Base
+        acts_as_restful_list :scope => :parent_id
+      end
+    end
+    
+    after(:all) do
+      Object.send(:remove_const, :Mixin)
+      
+      ActiveRecord::Base.connection.tables.each do |table|
+        ActiveRecord::Base.connection.drop_table(table)
+      end
+    end
+    
+    it 'should define scope_condition as an instance method' do
+      Mixin.new.should respond_to(:scope_condition)
+    end
+    
+    it 'should return a scope condition that limits based on the parent_id' do
+      Mixin.new(:parent_id => 3).scope_condition.should == "parent_id = 3"
+    end
+    
+    it 'should return a scope limiting based parent_id being NULL if parent_id is nil' do
+      Mixin.new.scope_condition.should == "parent_id IS NULL"
+    end
+    
+    it 'should set the position based on the scope list when adding a new item' do
+      Mixin.create!.position.should == 1
+      Mixin.create!(:parent_id => 1).position.should == 1
+      Mixin.create!(:parent_id => 1).position.should == 2
+      Mixin.create!(:parent_id => 2).position.should == 1
+    end
+    
+    describe 'reordering on update' do
+      before(:each) do
+        (1..4).each{ Mixin.create!(:parent_id => 1) }
+        (1..6).each{ Mixin.create!(:parent_id => 2) }
+      end
+      
+      it 'should automatically reorder the list if a record is updated with a lower position' do
+        fourth_mixin = Mixin.first( :conditions => { :position => 4, :parent_id => 1 } )
+        fourth_mixin.position = 2
+        fourth_mixin.save!
+        fourth_mixin.reload.position.should == 2
+        Mixin.all(:conditions => { :parent_id => 1 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+        Mixin.all(:conditions => { :parent_id => 2 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4,5,6]
+      end
+      
+      it 'should automatically reorder the list if a record is updated with a higher position' do
+        second_mixin = Mixin.first( :conditions => { :position => 2, :parent_id => 1  } )
+        second_mixin.position = 4
+        second_mixin.save!
+        second_mixin.reload.position.should == 4
+        Mixin.all(:conditions => { :parent_id => 1 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+        Mixin.all(:conditions => { :parent_id => 2 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4,5,6]
+      end
+    end
+    
+    it 'should automatically reorder the list scoped by parent if the record id deleted' do
+      (1..4).each{ Mixin.create!(:parent_id => 1) }
+      (1..6).each{ Mixin.create!(:parent_id => 2) }
+      second_mixin = Mixin.first( :conditions => { :position => 2, :parent_id => 1 } )
+      second_mixin.destroy
+      Mixin.all(:conditions => { :parent_id => 1 }, :order => 'position ASC').collect(&:position).should == [1,2,3]
+      Mixin.all(:conditions => { :parent_id => 2 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4,5,6]
+    end
+  end
+  
+  describe 'declaring acts_as_restful_list and setting the scope without the _id' do
+    before(:all) do
+      ActiveRecord::Schema.define(:version => 1) do
+        create_table :mixins do |t|
+          t.column :position, :integer
+          t.column :parent_id, :integer
+          t.column :created_at, :datetime      
+          t.column :updated_at, :datetime
+        end
+      end
+      
+      class Mixin < ActiveRecord::Base
+        acts_as_restful_list :scope => :parent
+      end
+    end
+    
+    after(:all) do
+      Object.send(:remove_const, :Mixin)
+      
+      ActiveRecord::Base.connection.tables.each do |table|
+        ActiveRecord::Base.connection.drop_table(table)
+      end
+    end
+    
+    it 'should define scope_condition as an instance method' do
+      Mixin.new.should respond_to(:scope_condition)
+    end
+    
+    it 'should return a scope condition that limits based on the parent_id' do
+      Mixin.new(:parent_id => 3).scope_condition.should == "parent_id = 3"
     end
   end
 end
