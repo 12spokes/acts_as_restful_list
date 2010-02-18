@@ -1,0 +1,9 @@
+=== Version 0.1.0 / 2010-02-17
+
+* enhancements
+  * added ability to scope the list.
+    
+=== Version 0.0.3 / 2010-02-14
+
+* enhancements
+  * can set the position column

@@ -1,0 +1,6 @@
+* enhancements
+  * Add ability to provide custom scope
+  * Add ability to scope on multiple columns
+  
+* Cleanup
+  * Reduce some of the duplication of examples in specs

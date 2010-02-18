@@ -1,12 +1,47 @@
 = acts_as_restful_list
 
-Description goes here.
+It's just like acts_as_list, but instead of having to clutter your code with 
+non-standard method calls like insert_at, acts_as_restful_list makes managing lists
+simple.  You update the position attribute just like you would update anything else
+and the rest is taken care of for you.
+
+For example:
+
+  class Item < ActiveRecord::Base
+    belongs_to :parent
+    acts_as_restful_list :scope => :parent
+  end
+
+Now, simply CRUD away:
+
+  item = Item.create
+  item.position # 1
+  
+  item2 = Item.create
+  item.position # 2
+  
+  item3 = Item.create
+  item.position # 3
+  
+  item.destroy
+  item2.position # 1
+  item3.position # 2
+  
+  item3.position = 1
+  item3.save
+  item3.position # 1
+  item2.position # 2
+  
+  different_parent = Item.create(:parent_id => 1)
+  different_parent.position # 1
+  
+And that's that.
 
 == Note on Patches/Pull Requests
  
 * Fork the project.
 * Make your feature addition or bug fix.
-* Add tests for it. This is important so I don't break it in a
+* Add specs for it. This is important so I don't break it in a
   future version unintentionally.
 * Commit, do not mess with rakefile, version, or history.
   (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
