@@ -9,6 +9,7 @@ module ActsAsRestfulList
     # +acts_as_restful_list+ makes the class it is called on automatically behave like an
     # ordered list. There are a number of options you can set:
     # * +column+: The column to use as the position column.  It's set to position by default.
+    # * +scope+: The column to scope the list to.  It takes a symbol with our without the _id.
     def acts_as_restful_list(options = {})
       include InstanceMethods
       
