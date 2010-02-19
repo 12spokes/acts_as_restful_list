@@ -5,14 +5,23 @@ non-standard method calls like insert_at, acts_as_restful_list makes managing li
 simple.  You update the position attribute just like you would update anything else
 and the rest is taken care of for you.
 
-For example:
+== Installation
+  #environment.rb
+  config.gem 'acts_as_restful_list'
+  
+  # in Terminal
+  rake gems:install
+
+== Usage
+
+=== In your model:
 
   class Item < ActiveRecord::Base
     belongs_to :parent
     acts_as_restful_list :scope => :parent
   end
 
-Now, simply CRUD away:
+=== Now, simply CRUD away:
 
   item = Item.create
   item.position # 1
@@ -36,6 +45,8 @@ Now, simply CRUD away:
   different_parent.position # 1
   
 And that's that.
+
+Report issues at http://github.com/12spokes/acts_as_restful_list/issues
 
 == Note on Patches/Pull Requests
  
