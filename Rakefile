@@ -8,7 +8,7 @@ begin
     gem.summary = %Q{Restful acts_as_list}
     gem.description = %Q{Just like acts_as_list, but allows updating through standard restful methods.}
     gem.email = "trey@12spokes.com"
-    gem.homepage = "http://github.com/treybean/acts_as_restful_list"
+    gem.homepage = "http://github.com/12spokes/acts_as_restful_list"
     gem.authors = ["'Trey Bean'"]
     gem.add_development_dependency "rspec", ">= 1.2.9"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
