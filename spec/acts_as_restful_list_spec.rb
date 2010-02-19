@@ -85,7 +85,7 @@ describe "ActsAsRestfulList" do
         mixin.destroy
       end
       
-      it 'should automatically reorder the list if the record id deleted' do
+      it 'should automatically reorder the list if the record is deleted' do
         (1..4).each{ Mixin.create! }
         second_mixin = Mixin.first( :conditions => { :position => 2 } )
         second_mixin.destroy
@@ -178,7 +178,7 @@ describe "ActsAsRestfulList" do
         mixin.destroy
       end
       
-      it 'should automatically reorder the list if the record id deleted' do
+      it 'should automatically reorder the list if the record is deleted' do
         (1..4).each{ Mixin.create! }
         second_mixin = Mixin.first( :conditions => { :pos => 2 } )
         second_mixin.destroy
@@ -255,7 +255,7 @@ describe "ActsAsRestfulList" do
       end
     end
     
-    it 'should automatically reorder the list scoped by parent if the record id deleted' do
+    it 'should automatically reorder the list scoped by parent if the record is deleted' do
       (1..4).each{ Mixin.create!(:parent_id => 1) }
       (1..6).each{ Mixin.create!(:parent_id => 2) }
       second_mixin = Mixin.first( :conditions => { :position => 2, :parent_id => 1 } )
@@ -295,6 +295,97 @@ describe "ActsAsRestfulList" do
     
     it 'should return a scope condition that limits based on the parent_id' do
       Mixin.new(:parent_id => 3).scope_condition.should == "parent_id = 3"
+    end
+  end
+  
+  
+  describe 'declaring acts_as_restful_list and setting the scope to multiple columns' do
+    before(:all) do
+      ActiveRecord::Schema.define(:version => 1) do
+        create_table :mixins do |t|
+          t.column :position, :integer
+          t.column :user_id, :integer
+          t.column :parent_id, :integer
+          t.column :created_at, :datetime      
+          t.column :updated_at, :datetime
+        end
+      end
+      
+      class Mixin < ActiveRecord::Base
+        acts_as_restful_list :scope => [:parent, :user]
+      end
+    end
+    
+    after(:all) do
+      Object.send(:remove_const, :Mixin)
+      
+      ActiveRecord::Base.connection.tables.each do |table|
+        ActiveRecord::Base.connection.drop_table(table)
+      end
+    end
+    
+    it 'should define scope_condition as an instance method' do
+      Mixin.new.should respond_to(:scope_condition)
+    end
+    
+    it 'should return a scope condition that limits based on the parent_id' do
+      Mixin.new(:user_id => 4, :parent_id => 3).scope_condition.should == "parent_id = 3 AND user_id = 4"
+    end
+    
+    describe 'reordering on update' do
+      before(:each) do
+        (1..4).each{ Mixin.create!(:parent_id => 1, :user_id => 5) }
+        (1..4).each{ Mixin.create!(:parent_id => 2, :user_id => 5) }
+        (1..4).each{ Mixin.create!(:parent_id => 1, :user_id => 7) }
+        (1..4).each{ Mixin.create!(:parent_id => 2, :user_id => 7) }
+      end
+      
+      it 'should automatically reorder the list if a record is updated with a lower position' do
+        user5_parent1_fourth_mixin = Mixin.first( :conditions => { :position => 4, :parent_id => 1, :user_id => 5 } )
+        user5_parent1_fourth_mixin.position = 2
+        user5_parent1_fourth_mixin.save!
+        user5_parent1_fourth_mixin.reload.position.should == 2
+        Mixin.all(:conditions => { :parent_id => 1, :user_id => 5 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+        Mixin.all(:conditions => { :parent_id => 1, :user_id => 5 }, :order => 'position ASC').collect(&:id).should == [1,4,2,3]
+        Mixin.all(:conditions => { :parent_id => 2, :user_id => 5 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+        Mixin.all(:conditions => { :parent_id => 2, :user_id => 5 }, :order => 'position ASC').collect(&:id).should == [5,6,7,8]
+        Mixin.all(:conditions => { :parent_id => 1, :user_id => 7 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+        Mixin.all(:conditions => { :parent_id => 1, :user_id => 7 }, :order => 'position ASC').collect(&:id).should == [9,10,11,12]
+        Mixin.all(:conditions => { :parent_id => 2, :user_id => 7 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+        Mixin.all(:conditions => { :parent_id => 2, :user_id => 7 }, :order => 'position ASC').collect(&:id).should == [13,14,15,16]
+      end
+      
+      it 'should automatically reorder the list if a record is updated with a higher position' do
+        second_mixin = Mixin.first( :conditions => { :position => 2, :parent_id => 1, :user_id => 5  } )
+        second_mixin.position = 4
+        second_mixin.save!
+        second_mixin.reload.position.should == 4
+        Mixin.all(:conditions => { :parent_id => 1, :user_id => 5 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+        Mixin.all(:conditions => { :parent_id => 1, :user_id => 5 }, :order => 'position ASC').collect(&:id).should == [1,3,4,2]
+        Mixin.all(:conditions => { :parent_id => 2, :user_id => 5 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+        Mixin.all(:conditions => { :parent_id => 2, :user_id => 5 }, :order => 'position ASC').collect(&:id).should == [5,6,7,8]
+        Mixin.all(:conditions => { :parent_id => 1, :user_id => 7 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+        Mixin.all(:conditions => { :parent_id => 1, :user_id => 7 }, :order => 'position ASC').collect(&:id).should == [9,10,11,12]
+        Mixin.all(:conditions => { :parent_id => 2, :user_id => 7 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+        Mixin.all(:conditions => { :parent_id => 2, :user_id => 7 }, :order => 'position ASC').collect(&:id).should == [13,14,15,16]
+      end
+    end
+    
+    it 'should automatically reorder if the record is deleted' do
+      (1..4).each{ Mixin.create!(:parent_id => 1, :user_id => 5) }
+      (1..4).each{ Mixin.create!(:parent_id => 2, :user_id => 5) }
+      (1..4).each{ Mixin.create!(:parent_id => 1, :user_id => 7) }
+      (1..4).each{ Mixin.create!(:parent_id => 2, :user_id => 7) }
+      second_mixin = Mixin.first( :conditions => { :position => 2, :parent_id => 1, :user_id => 5 } )
+      second_mixin.destroy
+      Mixin.all(:conditions => { :parent_id => 1, :user_id => 5 }, :order => 'position ASC').collect(&:position).should == [1,2,3]
+      Mixin.all(:conditions => { :parent_id => 1, :user_id => 5 }, :order => 'position ASC').collect(&:id).should == [1,3,4]
+      Mixin.all(:conditions => { :parent_id => 2, :user_id => 5 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+      Mixin.all(:conditions => { :parent_id => 2, :user_id => 5 }, :order => 'position ASC').collect(&:id).should == [5,6,7,8]
+      Mixin.all(:conditions => { :parent_id => 1, :user_id => 7 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+      Mixin.all(:conditions => { :parent_id => 1, :user_id => 7 }, :order => 'position ASC').collect(&:id).should == [9,10,11,12]
+      Mixin.all(:conditions => { :parent_id => 2, :user_id => 7 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
+      Mixin.all(:conditions => { :parent_id => 2, :user_id => 7 }, :order => 'position ASC').collect(&:id).should == [13,14,15,16]
     end
   end
 end
