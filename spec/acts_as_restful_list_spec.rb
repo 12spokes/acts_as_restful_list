@@ -69,6 +69,14 @@ describe "ActsAsRestfulList" do
         Mixin.all(:order => 'position ASC').collect(&:position).should == [1,2,3,4]
       end
       
+      it 'should reorder the list correctly if a record in the middle is updated with a lower position' do
+        second_mixin = Mixin.first( :conditions => { :position => 3 } )
+        second_mixin.position = 2
+        second_mixin.save!
+        second_mixin.reload.position.should == 2
+        Mixin.all(:order => 'position ASC').collect(&:position).should == [1,2,3,4]
+      end
+      
       it 'should automatically reorder the list if a record is updated with a higher position' do
         second_mixin = Mixin.first( :conditions => { :position => 2 } )
         second_mixin.position = 4
