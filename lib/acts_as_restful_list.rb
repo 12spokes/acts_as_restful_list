@@ -47,7 +47,7 @@ module ActsAsRestfulList
     def reset_order_after_update
       if self.send( "#{position_column}_changed?" )
         if self.send( "#{position_column}_was" ) > self.send( position_column )
-          self.class.update_all("#{position_column} = (#{position_column} + 1)", [scope_condition, "#{position_column} >= #{self.send( position_column )}", "id != #{id}"].compact.join(' AND '))
+          self.class.update_all("#{position_column} = (#{position_column} + 1)", [scope_condition, "#{position_column} >= #{self.send( position_column )}", "id != #{id}", "#{position_column} < #{self.send( "#{position_column}_was" )}"].compact.join(' AND '))
         else
           self.class.update_all("#{position_column} = (#{position_column} - 1)", [scope_condition, "#{position_column} <= #{self.send( position_column )}", "#{position_column} >= #{self.send( "#{position_column}_was" )}", "id != #{id}"].compact.join(' AND '))
         end
