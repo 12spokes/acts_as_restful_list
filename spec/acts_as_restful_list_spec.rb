@@ -70,10 +70,10 @@ describe "ActsAsRestfulList" do
       end
       
       it 'should reorder the list correctly if a record in the middle is updated with a lower position' do
-        second_mixin = Mixin.first( :conditions => { :position => 3 } )
-        second_mixin.position = 2
-        second_mixin.save!
-        second_mixin.reload.position.should == 2
+        third_mixin = Mixin.first( :conditions => { :position => 3 } )
+        third_mixin.position = 2
+        third_mixin.save!
+        third_mixin.reload.position.should == 2
         Mixin.all(:order => 'position ASC').collect(&:position).should == [1,2,3,4]
       end
       
