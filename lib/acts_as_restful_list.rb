@@ -28,9 +28,9 @@ module ActsAsRestfulList
           nil
         else
           scopes = Array(configuration[:scope]).collect do |scope|
-            column = scope.to_s.match(/_id$/) ? scope.to_s : "#{scope}_id"
+            column = self.class.column_names.include?(scope.to_s) ? scope.to_s : "#{scope}_id"
             value = self.send(column)
-            value.nil? ? "#{column} IS NULL" : "#{column} = #{value}"
+            value.nil? ? "#{column} IS NULL" : "#{column} = #{value.is_a?(String) ? "'#{value}'" : value}"
           end
           scopes.join(' AND ')
         end
