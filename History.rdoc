@@ -1,3 +1,13 @@
+=== Version 0.4.0 / 2010-11-15
+
+* enhancements
+  * Support Rails optimistic locking.  Thanks, Matt Smith (two-bit-fool)
+
+=== Version 0.3.0 / 2010-11-11
+
+* enhancements
+  * added ability to scope on a non-integer and non-id columns
+
 === Version 0.1.0 / 2010-02-17
 
 * enhancements

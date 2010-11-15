@@ -5,6 +5,10 @@ non-standard method calls like insert_at, acts_as_restful_list makes managing li
 simple.  You update the position attribute just like you would update anything else
 and the rest is taken care of for you.
 
+== Features
+* Automatically update your list's order through standard REST methods
+* Support for Rails Optimistic Locking
+
 == Installation
   #environment.rb
   config.gem 'acts_as_restful_list'
@@ -60,4 +64,4 @@ Report issues at http://github.com/12spokes/acts_as_restful_list/issues
 
 == Copyright
 
-Copyright (c) 2010 'Trey Bean'. See LICENSE for details.
+Copyright (c) 2010 '12 Spokes'. See LICENSE for details.
