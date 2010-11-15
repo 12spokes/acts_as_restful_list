@@ -35,6 +35,10 @@ module ActsAsRestfulList
           scopes.join(' AND ')
         end
       end
+      
+      define_method 'optimistic_locking_update' do
+        self.class.column_names.include?("lock_version") ? ", lock_version = (lock_version + 1)" : ""
+      end
     end
   end
   
@@ -46,7 +50,6 @@ module ActsAsRestfulList
     
     def reset_order_after_update
       if self.send( "#{position_column}_changed?" )
-        optimistic_locking_update = self.class.column_names.include?("lock_version") ? ", lock_version = (lock_version + 1)" : ""
         if self.send( "#{position_column}_was" ) > self.send( position_column )
           self.class.update_all("#{position_column} = (#{position_column} + 1) #{optimistic_locking_update}", [scope_condition, "#{position_column} >= #{self.send( position_column )}", "id != #{id}", "#{position_column} < #{self.send( "#{position_column}_was" )}"].compact.join(' AND '))
         else
@@ -56,7 +59,6 @@ module ActsAsRestfulList
     end
     
     def reset_order_after_destroy
-      optimistic_locking_update = self.class.column_names.include?("lock_version") ? ", lock_version = (lock_version + 1)" : ""
       self.class.update_all("#{position_column} = (#{position_column} - 1) #{optimistic_locking_update}", [scope_condition, "#{position_column} > #{self.send( position_column )}"].compact.join(' AND '))
     end
   end
