@@ -4,7 +4,7 @@ module ActsAsRestfulList
       base.extend ClassMethods
     end
   end
-  
+
   module ClassMethods
     # +acts_as_restful_list+ makes the class it is called on automatically behave like an
     # ordered list. There are a number of options you can set:
@@ -46,16 +46,18 @@ module ActsAsRestfulList
     
     def reset_order_after_update
       if self.send( "#{position_column}_changed?" )
+        optimistic_locking_update = self.class.column_names.include?("lock_version") ? ", lock_version = (lock_version + 1)" : ""
         if self.send( "#{position_column}_was" ) > self.send( position_column )
-          self.class.update_all("#{position_column} = (#{position_column} + 1)", [scope_condition, "#{position_column} >= #{self.send( position_column )}", "id != #{id}", "#{position_column} < #{self.send( "#{position_column}_was" )}"].compact.join(' AND '))
+          self.class.update_all("#{position_column} = (#{position_column} + 1) #{optimistic_locking_update}", [scope_condition, "#{position_column} >= #{self.send( position_column )}", "id != #{id}", "#{position_column} < #{self.send( "#{position_column}_was" )}"].compact.join(' AND '))
         else
-          self.class.update_all("#{position_column} = (#{position_column} - 1)", [scope_condition, "#{position_column} <= #{self.send( position_column )}", "#{position_column} >= #{self.send( "#{position_column}_was" )}", "id != #{id}"].compact.join(' AND '))
+          self.class.update_all("#{position_column} = (#{position_column} - 1) #{optimistic_locking_update}", [scope_condition, "#{position_column} <= #{self.send( position_column )}", "#{position_column} >= #{self.send( "#{position_column}_was" )}", "id != #{id}"].compact.join(' AND '))
         end
       end
     end
     
     def reset_order_after_destroy
-      self.class.update_all("#{position_column} = (#{position_column} - 1)", [scope_condition, "#{position_column} > #{self.send( position_column )}"].compact.join(' AND '))
+      optimistic_locking_update = self.class.column_names.include?("lock_version") ? ", lock_version = (lock_version + 1)" : ""
+      self.class.update_all("#{position_column} = (#{position_column} - 1) #{optimistic_locking_update}", [scope_condition, "#{position_column} > #{self.send( position_column )}"].compact.join(' AND '))
     end
   end
 end

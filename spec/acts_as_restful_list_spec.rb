@@ -12,7 +12,7 @@ describe "ActsAsRestfulList" do
         create_table :mixins do |t|
           t.column :position, :integer
           t.column :parent_id, :integer
-          t.column :created_at, :datetime      
+          t.column :created_at, :datetime
           t.column :updated_at, :datetime
         end
       end
@@ -24,7 +24,7 @@ describe "ActsAsRestfulList" do
     
     after(:all) do
       Object.send(:remove_const, :Mixin)
-      
+
       ActiveRecord::Base.connection.tables.each do |table|
         ActiveRecord::Base.connection.drop_table(table)
       end
@@ -85,7 +85,7 @@ describe "ActsAsRestfulList" do
         Mixin.all(:order => 'position ASC').collect(&:position).should == [1,2,3,4]
       end
     end
-      
+    
     describe 'reordering on deletion' do
       it 'should reset the order after deleting a record' do
         mixin = Mixin.create
@@ -106,6 +106,78 @@ describe "ActsAsRestfulList" do
     end
   end
   
+  describe 'optimistic locking' do
+    before(:all) do
+      ActiveRecord::Schema.define(:version => 1) do
+        create_table :mixins do |t|
+          t.column :position, :integer
+          t.column :parent_id, :integer
+          t.column :lock_version, :integer, :default => 0
+          t.column :created_at, :datetime
+          t.column :updated_at, :datetime
+        end
+      end
+      
+      class Mixin < ActiveRecord::Base
+        acts_as_restful_list
+      end
+    end
+    
+    after(:all) do
+      Object.send(:remove_const, :Mixin)
+
+      ActiveRecord::Base.connection.tables.each do |table|
+        ActiveRecord::Base.connection.drop_table(table)
+      end
+    end
+    
+    before(:each) do
+      (1..4).each{ Mixin.create! }
+    end
+    
+    describe 'reordering on destroy' do
+      it 'should raise an error for stale objects' do
+        second_mixin = Mixin.first( :conditions => { :position => 2 } )
+        third_mixin  = Mixin.first( :conditions => { :position => 3 } )
+        second_mixin.destroy
+        lambda {
+          third_mixin.destroy
+        }.should raise_error(ActiveRecord::StaleObjectError)
+      end
+      
+      it 'should NOT raise an error if update did not affect existing position' do
+        second_mixin = Mixin.first( :conditions => { :position => 2 } )
+        third_mixin  = Mixin.first( :conditions => { :position => 3 } )
+        third_mixin.destroy
+        lambda {
+          second_mixin.destroy
+        }.should_not raise_error(ActiveRecord::StaleObjectError)
+        Mixin.all(:order => 'position ASC').collect(&:position).should == [1,2]
+      end
+    end
+    
+    describe 'reordering on update' do
+      it 'should raise an error for stale objects' do
+        first_mixin  = Mixin.first( :conditions => { :position => 1 } )
+        fourth_mixin = Mixin.first( :conditions => { :position => 4 } )
+        fourth_mixin.update_attributes(:position => 1)
+        lambda {
+          first_mixin.update_attributes(:position => 2)
+        }.should raise_error(ActiveRecord::StaleObjectError)
+      end
+      
+      it 'should NOT raise an error if update did not affect existing position' do
+        first_mixin  = Mixin.first( :conditions => { :position => 1 } )
+        fourth_mixin = Mixin.first( :conditions => { :position => 4 } )
+        fourth_mixin.update_attributes(:position => 2)
+        lambda {
+          first_mixin.update_attributes(:position => 3)
+        }.should_not raise_error(ActiveRecord::StaleObjectError)
+        Mixin.all(:order => 'position ASC').collect(&:position).should == [1,2,3,4]
+      end
+    end
+    
+  end
   
   describe 'declaring acts_as_restful_list and setting the column' do
     before(:all) do
@@ -113,7 +185,7 @@ describe "ActsAsRestfulList" do
         create_table :mixins do |t|
           t.column :pos, :integer
           t.column :parent_id, :integer
-          t.column :created_at, :datetime      
+          t.column :created_at, :datetime
           t.column :updated_at, :datetime
         end
       end
@@ -125,7 +197,7 @@ describe "ActsAsRestfulList" do
     
     after(:all) do
       Object.send(:remove_const, :Mixin)
-      
+
       ActiveRecord::Base.connection.tables.each do |table|
         ActiveRecord::Base.connection.drop_table(table)
       end
@@ -178,7 +250,7 @@ describe "ActsAsRestfulList" do
         Mixin.all(:order => 'pos ASC').collect(&:pos).should == [1,2,3,4]
       end
     end
-      
+    
     describe 'reordering on deletion' do
       it 'should reset the order after deleting a record' do
         mixin = Mixin.create
@@ -201,7 +273,7 @@ describe "ActsAsRestfulList" do
         create_table :mixins do |t|
           t.column :position, :integer
           t.column :parent_id, :integer
-          t.column :created_at, :datetime      
+          t.column :created_at, :datetime
           t.column :updated_at, :datetime
         end
       end
@@ -213,7 +285,7 @@ describe "ActsAsRestfulList" do
     
     after(:all) do
       Object.send(:remove_const, :Mixin)
-      
+
       ActiveRecord::Base.connection.tables.each do |table|
         ActiveRecord::Base.connection.drop_table(table)
       end
@@ -279,7 +351,7 @@ describe "ActsAsRestfulList" do
         create_table :mixins do |t|
           t.column :position, :integer
           t.column :parent_id, :integer
-          t.column :created_at, :datetime      
+          t.column :created_at, :datetime
           t.column :updated_at, :datetime
         end
       end
@@ -291,7 +363,7 @@ describe "ActsAsRestfulList" do
     
     after(:all) do
       Object.send(:remove_const, :Mixin)
-      
+
       ActiveRecord::Base.connection.tables.each do |table|
         ActiveRecord::Base.connection.drop_table(table)
       end
@@ -313,7 +385,7 @@ describe "ActsAsRestfulList" do
         create_table :mixins do |t|
           t.column :position, :integer
           t.column :parent_name, :string
-          t.column :created_at, :datetime      
+          t.column :created_at, :datetime
           t.column :updated_at, :datetime
         end
       end
@@ -348,7 +420,7 @@ describe "ActsAsRestfulList" do
           t.column :position, :integer
           t.column :user_id, :integer
           t.column :parent_id, :integer
-          t.column :created_at, :datetime      
+          t.column :created_at, :datetime
           t.column :updated_at, :datetime
         end
       end
