@@ -333,6 +333,25 @@ describe "ActsAsRestfulList" do
         Mixin.all(:conditions => { :parent_id => 1 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4]
         Mixin.all(:conditions => { :parent_id => 2 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4,5,6]
       end
+      
+      it 'should report the old and new scope correctly' do
+        second_mixin = Mixin.first( :conditions => { :position => 2, :parent_id => 1  } )
+        second_mixin.parent_id = 2
+        second_mixin.position = 4
+        second_mixin.scope_condition_was.should == 'parent_id = 1'
+        second_mixin.scope_condition.should == 'parent_id = 2'
+      end
+      
+      it 'should automatically reorder both lists if a record is moved between them' do
+        second_mixin = Mixin.first( :conditions => { :position => 2, :parent_id => 1  } )
+        second_mixin.parent_id = 2
+        second_mixin.position = 4
+        second_mixin.save!
+        second_mixin.reload.parent_id.should == 2
+        second_mixin.reload.position.should == 4
+        Mixin.all(:conditions => { :parent_id => 1 }, :order => 'position ASC').collect(&:position).should == [1,2,3]
+        Mixin.all(:conditions => { :parent_id => 2 }, :order => 'position ASC').collect(&:position).should == [1,2,3,4,5,6,7]
+      end
     end
     
     it 'should automatically reorder the list scoped by parent if the record is deleted' do

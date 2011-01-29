@@ -36,6 +36,19 @@ module ActsAsRestfulList
         end
       end
       
+      define_method 'scope_condition_was' do
+        if configuration[:scope].nil?
+          nil
+        else
+          scopes = Array(configuration[:scope]).collect do |scope|
+            column = self.class.column_names.include?(scope.to_s) ? scope.to_s : "#{scope}_id"
+            value = self.send("#{column}_was")
+            value.nil? ? "#{column} IS NULL" : "#{column} = #{value.is_a?(String) ? "'#{value}'" : value}"
+          end
+          scopes.join(' AND ')
+        end
+      end
+      
       define_method 'optimistic_locking_update' do
         self.class.column_names.include?("lock_version") ? ", lock_version = (lock_version + 1)" : ""
       end
@@ -49,7 +62,10 @@ module ActsAsRestfulList
     end
     
     def reset_order_after_update
-      if self.send( "#{position_column}_changed?" )
+      if scope_condition != scope_condition_was
+        self.class.update_all("#{position_column} = (#{position_column} - 1) #{optimistic_locking_update}", [scope_condition_was, "#{position_column} > #{self.send( "#{position_column}_was" )}", "id != #{id}"].compact.join(' AND '))
+        self.class.update_all("#{position_column} = (#{position_column} + 1) #{optimistic_locking_update}", [scope_condition, "#{position_column} >= #{self.send( position_column )}", "id != #{id}"].compact.join(' AND '))
+      elsif self.send( "#{position_column}_changed?" )
         if self.send( "#{position_column}_was" ) > self.send( position_column )
           self.class.update_all("#{position_column} = (#{position_column} + 1) #{optimistic_locking_update}", [scope_condition, "#{position_column} >= #{self.send( position_column )}", "id != #{id}", "#{position_column} < #{self.send( "#{position_column}_was" )}"].compact.join(' AND '))
         else
