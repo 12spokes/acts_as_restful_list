@@ -1,3 +1,8 @@
+=== Version 0.5.0 / 2011-02-08
+
+* enhancements
+  * Support moving items between lists.  Thanks jamiemill!
+
 === Version 0.4.0 / 2010-11-15
 
 * enhancements
