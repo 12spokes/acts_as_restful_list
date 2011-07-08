@@ -50,6 +50,12 @@ describe "ActsAsRestfulList" do
       end
     end
     
+    it "updates the full order of a list if no positions already exist" do
+      4.times{ Mixin.create! }
+      ActiveRecord::Base.connection.execute("update mixins set position = NULL;")
+      Mixin.create!.position.should == 5
+    end
+    
     describe 'reordering on update' do
       before(:each) do
         (1..4).each{ Mixin.create! }
@@ -82,6 +88,14 @@ describe "ActsAsRestfulList" do
         second_mixin.position = 4
         second_mixin.save!
         second_mixin.reload.position.should == 4
+        Mixin.all(:order => 'position ASC').collect(&:position).should == [1,2,3,4]
+      end
+      
+      it "should create an order if there is none" do
+        ActiveRecord::Base.connection.execute("update mixins set position = NULL;")
+        mixin = Mixin.first
+        mixin.position = 3
+        mixin.save!
         Mixin.all(:order => 'position ASC').collect(&:position).should == [1,2,3,4]
       end
     end
