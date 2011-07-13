@@ -15,9 +15,7 @@ end
 task :default do
   # Force spec files to be loaded and ran in alphabetical order.
   specs_unit = Dir['spec/**/*_spec.rb'].sort.join(' ')
-  exit [
-    cmd("bundle exec rspec #{specs_unit}"),
-  ].uniq == [true]
+  exec "bundle exec rspec #{specs_unit}"
 end
 
 require 'rake/rdoctask'
