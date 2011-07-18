@@ -1,3 +1,9 @@
+=== Version 0.6.0 / 2011-07-18
+
+* enhancements
+  * Automatically initialize the order of the list under conditions that would 
+    otherwise break things. Thanks evizitei!!
+
 === Version 0.5.0 / 2011-02-08
 
 * enhancements

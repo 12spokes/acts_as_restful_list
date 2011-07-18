@@ -4,9 +4,9 @@ $:.unshift lib unless $:.include?(lib)
 
 Gem::Specification.new do |s|
   s.name        = %q{acts_as_restful_list}
-  s.version     = "0.5.1"
+  s.version     = "0.6"
   s.platform    = Gem::Platform::RUBY
-  s.authors     = ["'Trey Bean'"]
+  s.authors     = ['Trey Bean']
   s.email       = "trey@12spokes.com"
   s.homepage    = "http://github.com/12spokes/acts_as_restful_list"
   s.summary     = "Restful acts_as_list"
@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   
-  s.date = %q{2011-07-08}
+  s.date = %q{2011-07-18}
   
   
   s.extra_rdoc_files = [

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    acts_as_restful_list (0.5.1)
+    acts_as_restful_list (0.6)
 
 GEM
   remote: http://rubygems.org/
