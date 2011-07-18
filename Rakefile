@@ -1,38 +1,22 @@
-require 'rubygems'
+require "bundler"
+Bundler.setup
+Bundler::GemHelper.install_tasks
+
 require 'rake'
 
-begin
-  require 'jeweler'
-  Jeweler::Tasks.new do |gem|
-    gem.name = "acts_as_restful_list"
-    gem.summary = %Q{Restful acts_as_list}
-    gem.description = %Q{Just like acts_as_list, but allows updating through standard restful methods.}
-    gem.email = "trey@12spokes.com"
-    gem.homepage = "http://github.com/12spokes/acts_as_restful_list"
-    gem.authors = ["'Trey Bean'"]
-    gem.add_development_dependency "rspec", ">= 1.2.9"
-    # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
-  end
-  Jeweler::GemcutterTasks.new
-rescue LoadError
-  puts "Jeweler (or a dependency) not available. Install it with: gem install jeweler"
-end
+require "rspec/core/rake_task"
+RSpec::Core::RakeTask.new(:spec)
 
-require 'spec/rake/spectask'
-Spec::Rake::SpecTask.new(:spec) do |spec|
-  spec.libs << 'lib' << 'spec'
-  spec.spec_files = FileList['spec/**/*_spec.rb']
-end
-
-Spec::Rake::SpecTask.new(:rcov) do |spec|
-  spec.libs << 'lib' << 'spec'
-  spec.pattern = 'spec/**/*_spec.rb'
+RSpec::Core::RakeTask.new(:rcov) do |spec|
   spec.rcov = true
 end
 
-task :spec => :check_dependencies
-
-task :default => :spec
+# Run the specs & cukes
+task :default do
+  # Force spec files to be loaded and ran in alphabetical order.
+  specs_unit = Dir['spec/**/*_spec.rb'].sort.join(' ')
+  exec "bundle exec rspec #{specs_unit}"
+end
 
 require 'rake/rdoctask'
 Rake::RDocTask.new do |rdoc|
@@ -43,3 +27,4 @@ Rake::RDocTask.new do |rdoc|
   rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
+
