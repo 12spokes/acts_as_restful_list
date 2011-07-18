@@ -1,6 +1,5 @@
 require 'rubygems'
-gem 'activerecord', '>= 3'
-require 'active_record'
+require "active_record"
 
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
