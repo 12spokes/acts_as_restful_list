@@ -18,7 +18,7 @@ task :default do
   exec "bundle exec rspec #{specs_unit}"
 end
 
-require 'rake/rdoctask'
+require 'rdoc/task'
 Rake::RDocTask.new do |rdoc|
   version = File.exist?('VERSION') ? File.read('VERSION') : ""
 
