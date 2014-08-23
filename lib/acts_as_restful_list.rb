@@ -67,20 +67,26 @@ module ActsAsRestfulList
         initialize_order
       else
         if scope_condition != scope_condition_was
-          self.class.update_all( decrement_position_sql, [scope_condition_was, "#{position_column} > #{previous_position}", "id != #{id}"].compact.join(' AND '))
-          self.class.update_all( increment_position_sql, [scope_condition, "#{position_column} >= #{current_position}", "id != #{id}"].compact.join(' AND '))
+          conditions = [scope_condition_was, "#{position_column} > #{previous_position}", "id != #{id}"].compact.join(' AND ')
+          self.class.where(conditions).update_all(decrement_position_sql)
+
+          conditions = [scope_condition, "#{position_column} >= #{current_position}", "id != #{id}"].compact.join(' AND ')
+          self.class.where(conditions).update_all(increment_position_sql)
         elsif self.send( "#{position_column}_changed?" )
           if previous_position > current_position
-            self.class.update_all( increment_position_sql, [scope_condition, "#{position_column} >= #{current_position}", "id != #{id}", "#{position_column} < #{previous_position}"].compact.join(' AND '))
+            conditions = [scope_condition, "#{position_column} >= #{current_position}", "id != #{id}", "#{position_column} < #{previous_position}"].compact.join(' AND ')
+            self.class.where(conditions).update_all(increment_position_sql)
           else
-            self.class.update_all( decrement_position_sql, [scope_condition, "#{position_column} <= #{current_position}", "#{position_column} >= #{previous_position}", "id != #{id}"].compact.join(' AND '))
+            conditions = [scope_condition, "#{position_column} <= #{current_position}", "#{position_column} >= #{previous_position}", "id != #{id}"].compact.join(' AND ')
+            self.class.where(conditions).update_all(decrement_position_sql)
           end
         end
       end
     end
 
     def reset_order_after_destroy
-      self.class.update_all("#{position_column} = (#{position_column} - 1) #{optimistic_locking_update}", [scope_condition, "#{position_column} > #{self.send( position_column )}"].compact.join(' AND '))
+      conditions = [scope_condition, "#{position_column} > #{self.send(position_column)}"].compact.join(' AND ')
+      self.class.where(conditions).update_all("#{position_column} = (#{position_column} - 1) #{optimistic_locking_update}")
     end
 
     def initialize_order
