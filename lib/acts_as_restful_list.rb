@@ -92,7 +92,7 @@ module ActsAsRestfulList
     end
     
     def last_record
-      self.class.last( :conditions => scope_condition, :order => "#{position_column} ASC" )
+      self.class.where(scope_condition).order("#{position_column} ASC").last
     end
     
     def last_record_position
