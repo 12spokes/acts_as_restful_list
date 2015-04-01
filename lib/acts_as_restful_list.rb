@@ -12,17 +12,17 @@ module ActsAsRestfulList
     # * +scope+: The column to scope the list to.  It takes a symbol with our without the _id.
     def acts_as_restful_list(options = {})
       include InstanceMethods
-      
+
       configuration = {:column => :position}.merge(options)
-      
+
       before_create :set_position
       after_update :reset_order_after_update
       after_destroy :reset_order_after_destroy
-      
+
       define_method 'position_column' do
         configuration[:column].to_s
       end
-      
+
       define_method 'scope_condition' do
         if configuration[:scope].nil?
           nil
@@ -35,7 +35,7 @@ module ActsAsRestfulList
           scopes.join(' AND ')
         end
       end
-      
+
       define_method 'scope_condition_was' do
         if configuration[:scope].nil?
           nil
@@ -48,73 +48,79 @@ module ActsAsRestfulList
           scopes.join(' AND ')
         end
       end
-      
+
       define_method 'optimistic_locking_update' do
         self.class.column_names.include?("lock_version") ? ", lock_version = (lock_version + 1)" : ""
       end
     end
   end
-  
+
   module InstanceMethods
     def set_position
       initialize_order if !last_record.nil? and last_record_position.nil?
-    
+
       self.send( "#{position_column}=", last_record.nil? ? 1 : last_record_position + 1)
     end
-    
+
     def reset_order_after_update
       if previous_position.nil?
         initialize_order
-      else        
+      else
         if scope_condition != scope_condition_was
-          self.class.update_all( decrement_position_sql, [scope_condition_was, "#{position_column} > #{previous_position}", "id != #{id}"].compact.join(' AND '))
-          self.class.update_all( increment_position_sql, [scope_condition, "#{position_column} >= #{current_position}", "id != #{id}"].compact.join(' AND '))
+          conditions = [scope_condition_was, "#{position_column} > #{previous_position}", "id != #{id}"].compact.join(' AND ')
+          self.class.where(conditions).update_all(decrement_position_sql)
+
+          conditions = [scope_condition, "#{position_column} >= #{current_position}", "id != #{id}"].compact.join(' AND ')
+          self.class.where(conditions).update_all(increment_position_sql)
         elsif self.send( "#{position_column}_changed?" )
           if previous_position > current_position
-            self.class.update_all( increment_position_sql, [scope_condition, "#{position_column} >= #{current_position}", "id != #{id}", "#{position_column} < #{previous_position}"].compact.join(' AND '))
+            conditions = [scope_condition, "#{position_column} >= #{current_position}", "id != #{id}", "#{position_column} < #{previous_position}"].compact.join(' AND ')
+            self.class.where(conditions).update_all(increment_position_sql)
           else
-            self.class.update_all( decrement_position_sql, [scope_condition, "#{position_column} <= #{current_position}", "#{position_column} >= #{previous_position}", "id != #{id}"].compact.join(' AND '))
+            conditions = [scope_condition, "#{position_column} <= #{current_position}", "#{position_column} >= #{previous_position}", "id != #{id}"].compact.join(' AND ')
+            self.class.where(conditions).update_all(decrement_position_sql)
           end
         end
       end
     end
-    
+
     def reset_order_after_destroy
-      self.class.update_all("#{position_column} = (#{position_column} - 1) #{optimistic_locking_update}", [scope_condition, "#{position_column} > #{self.send( position_column )}"].compact.join(' AND '))
+      conditions = [scope_condition, "#{position_column} > #{self.send(position_column)}"].compact.join(' AND ')
+      self.class.where(conditions).update_all("#{position_column} = (#{position_column} - 1) #{optimistic_locking_update}")
     end
-    
+
     def initialize_order
-      initial_set = self.class.find(:all,:conditions=>scope_condition,:select=>"id",:order=>"created_at ASC")
-      
+      initial_set = self.class.where(scope_condition).select("id").order("created_at ASC")
+
       initial_set.each_with_index do |item,idx|
         ActiveRecord::Base.connection.execute("update #{self.class.table_name} set position = #{idx + 1} where id = #{item.id};")
       end
     end
-    
+
     def last_record
-      self.class.last( :conditions => scope_condition, :order => "#{position_column} ASC" )
+      self.class.order("#{position_column} ASC").where(scope_condition).last
     end
-    
+
     def last_record_position
       last_record.send(position_column)
     end
-    
+
     def current_position
       self.send( position_column )
     end
-    
+
     def current_position=(value)
       self.send( "#{position_column}=", value )
     end
-    
+
     def previous_position
       self.send( "#{position_column}_was" )
     end
-    
+
     def increment_position_sql
       "#{position_column} = (#{position_column} + 1) #{optimistic_locking_update}"
     end
-    
+
     def decrement_position_sql
       "#{position_column} = (#{position_column} - 1) #{optimistic_locking_update}"
     end
