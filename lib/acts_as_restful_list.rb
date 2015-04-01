@@ -90,7 +90,7 @@ module ActsAsRestfulList
     end
 
     def initialize_order
-      initial_set = self.class.find(:all,:conditions=>scope_condition,:select=>"id",:order=>"created_at ASC")
+      initial_set = self.class.where(scope_condition).select("id").order("created_at ASC")
 
       initial_set.each_with_index do |item,idx|
         ActiveRecord::Base.connection.execute("update #{self.class.table_name} set position = #{idx + 1} where id = #{item.id};")
